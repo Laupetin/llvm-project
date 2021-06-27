@@ -1,0 +1,48 @@
+//===- HeaderClassDefinitionDumper.h ----------------------------*- C++ -*-===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef LLVM_TOOLS_LLVMPDBDUMP_HEADERCLASSDEFINITIONDUMPER_H
+#define LLVM_TOOLS_LLVMPDBDUMP_HEADERCLASSDEFINITIONDUMPER_H
+
+#include "AnonTypenameTracker.h"
+
+#include "llvm/ADT/BitVector.h"
+
+#include "llvm/DebugInfo/PDB/PDBSymDumper.h"
+#include "llvm/DebugInfo/PDB/PDBSymbolData.h"
+#include "llvm/DebugInfo/PDB/PDBSymbolFunc.h"
+
+#include <list>
+#include <memory>
+#include <unordered_map>
+
+namespace llvm {
+class BitVector;
+
+namespace pdb {
+
+class ClassLayout;
+class LinePrinter;
+
+class HeaderClassDefinitionDumper : public PDBSymDumper {
+public:
+  HeaderClassDefinitionDumper(LinePrinter &P, AnonTypenameTracker &A);
+
+  void start(const PDBSymbolTypeUDT &Class);
+  void start(const ClassLayout &Class);
+
+private:
+  void prettyPrintClassIntro(const ClassLayout &Class);
+  void prettyPrintClassOutro(const ClassLayout &Class);
+
+  LinePrinter &Printer;
+  AnonTypenameTracker &AnonTypenames;
+};
+} // namespace pdb
+} // namespace llvm
+#endif

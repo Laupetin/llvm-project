@@ -105,6 +105,40 @@ extern llvm::cl::opt<ClassDefinitionFormat> ClassFormat;
 extern llvm::cl::opt<uint32_t> ClassRecursionDepth;
 }
 
+namespace header {
+
+enum class ClassDefinitionFormat { None, Layout, All };
+enum class ClassSortMode {
+  None,
+  Name,
+  Size,
+  Padding,
+  PaddingPct,
+  PaddingImmediate,
+  PaddingPctImmediate
+};
+
+bool compareFunctionSymbols(
+    const std::unique_ptr<llvm::pdb::PDBSymbolFunc> &F1,
+    const std::unique_ptr<llvm::pdb::PDBSymbolFunc> &F2);
+bool compareDataSymbols(const std::unique_ptr<llvm::pdb::PDBSymbolData> &F1,
+                        const std::unique_ptr<llvm::pdb::PDBSymbolData> &F2);
+
+extern llvm::cl::list<std::string> WithName;
+
+extern llvm::cl::opt<bool> Native;
+extern llvm::cl::opt<bool> ExtraInfo;
+
+extern llvm::cl::opt<bool> Types;
+extern llvm::cl::opt<bool> Classes;
+extern llvm::cl::opt<bool> Enums;
+extern llvm::cl::opt<bool> Typedefs;
+extern llvm::cl::opt<bool> ExcludeCompilerGenerated;
+
+extern llvm::cl::list<std::string> ExcludeTypes;
+extern llvm::cl::list<std::string> IncludeTypes;
+} // namespace header
+
 namespace bytes {
 struct NumberRange {
   uint64_t Min;

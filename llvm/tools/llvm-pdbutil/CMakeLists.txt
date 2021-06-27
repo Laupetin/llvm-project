@@ -9,9 +9,16 @@ set(LLVM_LINK_COMPONENTS
   )
 
 add_llvm_tool(llvm-pdbutil
+  AnonTypenameTracker.cpp
   BytesOutputStyle.cpp
   DumpOutputStyle.cpp
   ExplainOutputStyle.cpp
+  HeaderClassDefinitionDumper.cpp
+  HeaderClassLayoutGraphicalDumper.cpp
+  HeaderEnumDumper.cpp
+  HeaderTypedefDumper.cpp
+  HeaderTypeDumper.cpp
+  HeaderVariableDumper.cpp
   InputFile.cpp
   llvm-pdbutil.cpp
   FormatUtil.cpp
