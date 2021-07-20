@@ -34,8 +34,10 @@ void HeaderClassLayoutGraphicalDumper::start(const UDTLayoutBase &Layout) {
 
   for (auto &Other : Layout.other_items())
     Other->dump(*this);
- /* for (auto &Func : Layout.funcs())
-    Func->dump(*this);*/
+  if (opts::header::Methods) {
+    for (auto &Func : Layout.funcs())
+      Func->dump(*this);
+  }
 
   const BitVector &UseMap = Layout.usedBytes();
   int NextPaddingByte = UseMap.find_first_unset();

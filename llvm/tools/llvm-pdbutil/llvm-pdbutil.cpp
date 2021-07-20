@@ -393,6 +393,9 @@ cl::opt<bool> Native("native", cl::desc("Use native PDB reader instead of DIA"),
 cl::opt<bool> ExtraInfo("extra-info", cl::desc("Include extra information about type size, offsets, etc as comments"),
                      cl::cat(OtherOptions), cl::sub(HeaderSubcommand));
 
+cl::opt<bool> Methods("methods", cl::desc("Include information about methods"),
+                     cl::cat(OtherOptions), cl::sub(HeaderSubcommand));
+
 cl::opt<cl::boolOrDefault>
     ColorOutput("color-output",
                 cl::desc("Override use of color (default = isatty)"),

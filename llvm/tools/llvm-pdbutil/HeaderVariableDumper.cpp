@@ -102,32 +102,17 @@ void HeaderVariableDumper::start(const PDBSymbolData &Var, uint32_t Offset) {
   }
 }
 
-void HeaderVariableDumper::startVbptr(uint32_t Offset, uint32_t Size) {
-  Printer.NewLine();
-  Printer << "vbptr ";
-
-  WithColor(Printer, PDB_ColorItem::Offset).get()
-      << "+" << format_hex(Offset, 4) << " [sizeof=" << Size << "] ";
-}
-
 void HeaderVariableDumper::start(const PDBSymbolTypeVTable &Var,
                                  uint32_t Offset) {
+  if (opts::header::Methods)
+    return;
+
   Printer.NewLine();
   if (Var.getClassParentId() != 0) {
     Printer << Var.getClassParent()->getName() << "Vtbl* vfptr;";
   } else {
     Printer << "void* vfptr;";
   }
-  //auto VTableType = cast<PDBSymbolTypePointer>(Var.getType());
-  //uint32_t PointerSize = VTableType->getLength();
-
-  //WithColor(Printer, PDB_ColorItem::Offset).get()
-  //    << "+" << format_hex(Offset + Var.getOffset(), 4)
-  //    << " [sizeof=" << PointerSize << "] ";
-  //
-  ////VTableType->dump(*this);
-  //Var.defaultDump(Printer.getStream(), 4, PdbSymbolIdField::All,
-  //                PdbSymbolIdField::All);
 }
 
 void HeaderVariableDumper::dump(const PDBSymbolTypeArray &Symbol) {
@@ -215,27 +200,6 @@ void HeaderVariableDumper::dump(const PDBSymbolTypePointer &Symbol) {
 
   if (Symbol.getRawSymbol().isRestrictedType())
     WithColor(Printer, PDB_ColorItem::Keyword).get() << " __restrict ";
-}
-
-void HeaderVariableDumper::dump(const PDBSymbolTypeVTableShape &Symbol) {
-  Printer << "VTABLESHAPE: " << Symbol.getName();
-
-  Symbol.defaultDump(Printer.getStream(), 4, PdbSymbolIdField::All,
-                     PdbSymbolIdField::All);
-  if (Symbol.getLexicalParentId() != 0) {
-    Printer << " + " << Symbol.getLexicalParent()->getName() << " - " << Symbol.getCount();
-  }
-
-  auto children = Symbol.findAllChildren();
-
-  if (children && children->getChildCount() > 0) {
-
-    while (auto child = children->getNext()) {
-      Printer << " + " << child->getName(); 
-    }
-  } else {
-    Printer << " no children";
-  }
 }
 
 void HeaderVariableDumper::dumpRight(const PDBSymbolTypePointer &Symbol) {

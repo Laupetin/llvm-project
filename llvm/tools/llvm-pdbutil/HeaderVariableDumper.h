@@ -27,7 +27,6 @@ public:
 
   void start(const PDBSymbolData &Var, uint32_t Offset = 0);
   void start(const PDBSymbolTypeVTable &Var, uint32_t Offset = 0);
-  void startVbptr(uint32_t Offset, uint32_t Size);
 
   void dump(const PDBSymbolTypeArray &Symbol) override;
   void dump(const PDBSymbolTypeBuiltin &Symbol) override;
@@ -36,7 +35,6 @@ public:
   void dump(const PDBSymbolTypePointer &Symbol) override;
   void dump(const PDBSymbolTypeTypedef &Symbol) override;
   void dump(const PDBSymbolTypeUDT &Symbol) override;
-  void dump(const PDBSymbolTypeVTableShape &Symbol) override;
 
   void dumpRight(const PDBSymbolTypeArray &Symbol) override;
   void dumpRight(const PDBSymbolTypeFunctionSig &Symbol) override;

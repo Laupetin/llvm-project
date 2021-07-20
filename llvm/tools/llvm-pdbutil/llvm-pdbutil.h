@@ -128,6 +128,7 @@ extern llvm::cl::list<std::string> WithName;
 
 extern llvm::cl::opt<bool> Native;
 extern llvm::cl::opt<bool> ExtraInfo;
+extern llvm::cl::opt<bool> Methods;
 
 extern llvm::cl::opt<bool> Types;
 extern llvm::cl::opt<bool> Classes;

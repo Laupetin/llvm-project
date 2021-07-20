@@ -175,7 +175,8 @@ void HeaderFunctionDumper::start(const PDBSymbolFunc &Symbol,
   if (Symbol.isVolatileType())
     WithColor(Printer, PDB_ColorItem::Keyword).get() << " volatile";
   if (Symbol.isPureVirtual())
-    Printer << " = 0;";
+    Printer << " = 0";
+  Printer << ";";
 }
 
 void HeaderFunctionDumper::dump(const PDBSymbolTypeArray &Symbol) {

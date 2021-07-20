@@ -51,6 +51,9 @@ void HeaderClassDefinitionDumper::start(const ClassLayout &Layout) {
 
 bool HeaderClassDefinitionDumper::shouldDumpVtbl(const PDBSymbolTypeUDT &Class) {
 
+  if (opts::header::Methods)
+    return false;
+
   if (Class.getVirtualTableShapeId() == 0)
     return false;
 
