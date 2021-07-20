@@ -10,6 +10,7 @@
 
 #include "LinePrinter.h"
 #include "HeaderClassLayoutGraphicalDumper.h"
+#include "HeaderFunctionDumper.h"
 #include "llvm-pdbutil.h"
 
 #include "llvm/ADT/APFloat.h"
@@ -35,12 +36,68 @@ void HeaderClassDefinitionDumper::start(const PDBSymbolTypeUDT &Class) {
 }
 
 void HeaderClassDefinitionDumper::start(const ClassLayout &Layout) {
+
+  if (shouldDumpVtbl(Layout.getClass())) {
+    prettyPrintVtbl(Layout.getClass());
+  }
+
   prettyPrintClassIntro(Layout);
 
   HeaderClassLayoutGraphicalDumper Dumper(Printer, AnonTypenames, 0);
   Dumper.start(Layout);
 
   prettyPrintClassOutro(Layout);
+}
+
+bool HeaderClassDefinitionDumper::shouldDumpVtbl(const PDBSymbolTypeUDT &Class) {
+
+  if (Class.getVirtualTableShapeId() == 0)
+    return false;
+
+  const auto shape = unique_dyn_cast<PDBSymbolTypeVTableShape>(Class.getVirtualTableShape());
+  if (!shape)
+    return false;
+
+  if (shape->getCount() <= 0)
+    return false;
+
+  const auto allVTables = Class.findAllChildren<PDBSymbolTypeVTable>();
+  if (!allVTables || allVTables->getChildCount() <= 0)
+    return false;
+
+  const auto parentId = Class.getSymIndexId();
+  while (auto vtable = allVTables->getNext()) {
+    if (vtable->getClassParentId() == parentId) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+void HeaderClassDefinitionDumper::prettyPrintVtbl(const PDBSymbolTypeUDT &Class) {
+    
+  Printer << "struct " << Class.getName() << "Vtbl";
+  Printer.NewLine();
+  Printer << "{";
+  Printer.Indent();
+
+  HeaderFunctionDumper Dumper(Printer);
+  const auto children = Class.findAllChildren<PDBSymbolFunc>();
+  if (children && children->getChildCount() > 0) {
+    while (auto child = children->getNext()) {
+      if (child->isVirtual()) {
+        Printer.NewLine();
+        Dumper.start(*child, HeaderFunctionDumper::PointerType::Pointer);
+      }
+    }
+  }
+
+  Printer.Unindent();
+  Printer.NewLine();
+  Printer << "};";
+  Printer.NewLine();
+  Printer.NewLine();
 }
 
 void HeaderClassDefinitionDumper::prettyPrintClassIntro(
@@ -100,7 +157,7 @@ void HeaderClassDefinitionDumper::prettyPrintClassOutro(
     const ClassLayout &Layout) {
   Printer.Unindent();
   Printer.NewLine();
-  Printer << "}";
+  Printer << "};";
 
   if (opts::header::ExtraInfo) {
     if (Layout.deepPaddingSize() > 0) {

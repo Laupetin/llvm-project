@@ -8,13 +8,12 @@
 
 #include "HeaderClassLayoutGraphicalDumper.h"
 
+#include "HeaderClassDefinitionDumper.h"
 #include "HeaderEnumDumper.h"
+#include "HeaderFunctionDumper.h"
+#include "HeaderTypedefDumper.h"
 #include "HeaderVariableDumper.h"
 #include "LinePrinter.h"
-#include "PrettyClassDefinitionDumper.h"
-#include "PrettyEnumDumper.h"
-#include "PrettyFunctionDumper.h"
-#include "PrettyTypedefDumper.h"
 #include "llvm-pdbutil.h"
 
 #include "llvm/DebugInfo/PDB/PDBSymbolData.h"
@@ -35,8 +34,8 @@ void HeaderClassLayoutGraphicalDumper::start(const UDTLayoutBase &Layout) {
 
   for (auto &Other : Layout.other_items())
     Other->dump(*this);
-  for (auto &Func : Layout.funcs())
-    Func->dump(*this);
+ /* for (auto &Func : Layout.funcs())
+    Func->dump(*this);*/
 
   const BitVector &UseMap = Layout.usedBytes();
   int NextPaddingByte = UseMap.find_first_unset();
@@ -61,15 +60,8 @@ void HeaderClassLayoutGraphicalDumper::start(const UDTLayoutBase &Layout) {
     }
 
     CurrentItem = Item;
-    if (Item->isVBPtr()) {
-      VTableLayoutItem &Layout = static_cast<VTableLayoutItem &>(*CurrentItem);
-
-      HeaderVariableDumper VarDumper(Printer, AnonTypenames);
-      VarDumper.startVbptr(CurrentAbsoluteOffset, Layout.getSize());
-    } else {
-      if (auto Sym = Item->getSymbol())
-        Sym->dump(*this);
-    }
+    if (auto Sym = Item->getSymbol())
+      Sym->dump(*this);
 
     if (Item->getLayoutSize() > 0) {
       uint32_t Prev = RelativeOffset + Item->getLayoutSize() - 1;
@@ -103,26 +95,6 @@ void HeaderClassLayoutGraphicalDumper::printPaddingRow(uint32_t Amount) {
 
 void HeaderClassLayoutGraphicalDumper::dump(
     const PDBSymbolTypeBaseClass &Symbol) {
-  assert(CurrentItem != nullptr);
-
-  Printer.NewLine();
-  BaseClassLayout &Layout = static_cast<BaseClassLayout &>(*CurrentItem);
-
-  std::string Label = "base";
-  if (Layout.isVirtualBase()) {
-    Label.insert(Label.begin(), 'v');
-    if (Layout.getBase().isIndirectVirtualBaseClass())
-      Label.insert(Label.begin(), 'i');
-  }
-  Printer << Label << " ";
-
-  uint32_t Size = Layout.isEmptyBase() ? 1 : Layout.getLayoutSize();
-
-  WithColor(Printer, PDB_ColorItem::Offset).get()
-      << "+" << format_hex(CurrentAbsoluteOffset, 4) << " [sizeof=" << Size
-      << "] ";
-
-  WithColor(Printer, PDB_ColorItem::Identifier).get() << Layout.getName();
 }
 
 void HeaderClassLayoutGraphicalDumper::dump(const PDBSymbolData &Symbol) {
@@ -146,7 +118,7 @@ void HeaderClassLayoutGraphicalDumper::dump(const PDBSymbolTypeEnum &Symbol) {
 void HeaderClassLayoutGraphicalDumper::dump(
     const PDBSymbolTypeTypedef &Symbol) {
   Printer.NewLine();
-  TypedefDumper Dumper(Printer);
+  HeaderTypedefDumper Dumper(Printer);
   Dumper.start(Symbol);
 }
 
@@ -165,6 +137,6 @@ void HeaderClassLayoutGraphicalDumper::dump(const PDBSymbolFunc &Symbol) {
     return;
   
   Printer.NewLine();
-  FunctionDumper Dumper(Printer);
-  Dumper.start(Symbol, FunctionDumper::PointerType::None);
+  HeaderFunctionDumper Dumper(Printer);
+  Dumper.start(Symbol, HeaderFunctionDumper::PointerType::None);
 }

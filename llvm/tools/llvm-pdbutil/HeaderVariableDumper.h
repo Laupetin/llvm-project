@@ -36,6 +36,7 @@ public:
   void dump(const PDBSymbolTypePointer &Symbol) override;
   void dump(const PDBSymbolTypeTypedef &Symbol) override;
   void dump(const PDBSymbolTypeUDT &Symbol) override;
+  void dump(const PDBSymbolTypeVTableShape &Symbol) override;
 
   void dumpRight(const PDBSymbolTypeArray &Symbol) override;
   void dumpRight(const PDBSymbolTypeFunctionSig &Symbol) override;

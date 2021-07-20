@@ -12,8 +12,8 @@
 #include "LinePrinter.h"
 #include "PrettyBuiltinDumper.h"
 #include "HeaderClassDefinitionDumper.h"
-#include "PrettyFunctionDumper.h"
-#include "PrettyTypedefDumper.h"
+#include "HeaderTypedefDumper.h"
+#include "HeaderFunctionDumper.h"
 #include "llvm-pdbutil.h"
 
 #include "llvm/DebugInfo/PDB/IPDBSession.h"
@@ -71,27 +71,11 @@ static void dumpSymbolCategory(LinePrinter &Printer, const PDBSymbolExe &Exe,
   }
 }
 
-static void printClassDecl(LinePrinter &Printer,
-                           const PDBSymbolTypeUDT &Class) {
-  if (Class.getUnmodifiedTypeId() != 0) {
-    if (Class.isConstType())
-      WithColor(Printer, PDB_ColorItem::Keyword).get() << "const ";
-    if (Class.isVolatileType())
-      WithColor(Printer, PDB_ColorItem::Keyword).get() << "volatile ";
-    if (Class.isUnalignedType())
-      WithColor(Printer, PDB_ColorItem::Keyword).get() << "unaligned ";
-  }
-  WithColor(Printer, PDB_ColorItem::Keyword).get() << Class.getUdtKind() << " ";
-  WithColor(Printer, PDB_ColorItem::Type).get() << Class.getName();
-}
-
 void HeaderTypeDumper::start(const PDBSymbolExe &Exe) {
 
   std::vector<LayoutPtr> ClassList;
   if (opts::header::Classes) {
     if (auto Classes = Exe.findAllChildren<PDBSymbolTypeUDT>()) {
-      Printer.NewLine();
-      WithColor(Printer, PDB_ColorItem::Identifier).get() << "Classes";
 
       while (auto Class = Classes->getNext()) {
         if (Printer.IsTypeExcluded(Class->getName(), Class->getLength()))
@@ -107,14 +91,15 @@ void HeaderTypeDumper::start(const PDBSymbolExe &Exe) {
         dumpClassForwardDeclaration(*Class);
         ClassList.emplace_back(std::make_unique<ClassLayout>(std::move(Class)));
       }
+      Printer.NewLine();
     }
   }
 
   if (opts::header::Enums)
     dumpSymbolCategory<PDBSymbolTypeEnum>(Printer, Exe, *this);
 
-  /* if (opts::header::Typedefs)
-    dumpSymbolCategory<PDBSymbolTypeTypedef>(Printer, Exe, *this);*/
+  if (opts::header::Typedefs)
+    dumpSymbolCategory<PDBSymbolTypeTypedef>(Printer, Exe, *this);
 
   if (opts::header::Classes) {
     for (auto &Class : ClassList)
@@ -129,70 +114,11 @@ void HeaderTypeDumper::dump(const PDBSymbolTypeEnum &Symbol) {
   Dumper.start(Symbol);
 }
 
-void HeaderTypeDumper::dump(const PDBSymbolTypeBuiltin &Symbol) {
-  BuiltinDumper BD(Printer);
-  BD.start(Symbol);
-}
-
-void HeaderTypeDumper::dump(const PDBSymbolTypeUDT &Symbol) {
-  printClassDecl(Printer, Symbol);
-}
-
 void HeaderTypeDumper::dump(const PDBSymbolTypeTypedef &Symbol) {
   assert(opts::header::Typedefs);
 
-  TypedefDumper Dumper(Printer);
+  HeaderTypedefDumper Dumper(Printer);
   Dumper.start(Symbol);
-}
-
-void HeaderTypeDumper::dump(const PDBSymbolTypeArray &Symbol) {
-  auto ElementType = Symbol.getElementType();
-
-  ElementType->dump(*this);
-  Printer << "[";
-  WithColor(Printer, PDB_ColorItem::LiteralValue).get() << Symbol.getCount();
-  Printer << "]";
-}
-
-void HeaderTypeDumper::dump(const PDBSymbolTypeFunctionSig &Symbol) {
-  FunctionDumper Dumper(Printer);
-  Dumper.start(Symbol, nullptr, FunctionDumper::PointerType::None);
-}
-
-void HeaderTypeDumper::dump(const PDBSymbolTypePointer &Symbol) {
-  std::unique_ptr<PDBSymbol> P = Symbol.getPointeeType();
-
-  if (auto *FS = dyn_cast<PDBSymbolTypeFunctionSig>(P.get())) {
-    FunctionDumper Dumper(Printer);
-    FunctionDumper::PointerType PT =
-        Symbol.isReference() ? FunctionDumper::PointerType::Reference
-                             : FunctionDumper::PointerType::Pointer;
-    Dumper.start(*FS, nullptr, PT);
-    return;
-  }
-
-  if (auto *UDT = dyn_cast<PDBSymbolTypeUDT>(P.get())) {
-    printClassDecl(Printer, *UDT);
-  } else if (P) {
-    P->dump(*this);
-  }
-
-  if (auto Parent = Symbol.getClassParent()) {
-    auto UDT = llvm::unique_dyn_cast<PDBSymbolTypeUDT>(std::move(Parent));
-    if (UDT)
-      Printer << " " << UDT->getName() << "::";
-  }
-
-  if (Symbol.isReference())
-    Printer << "&";
-  else if (Symbol.isRValueReference())
-    Printer << "&&";
-  else
-    Printer << "*";
-}
-
-void HeaderTypeDumper::dump(const PDBSymbolTypeVTableShape &Symbol) {
-  Printer.format("<vtshape ({0} methods)>", Symbol.getCount());
 }
 
 void HeaderTypeDumper::dumpClassLayout(const ClassLayout &Class) {
@@ -208,4 +134,5 @@ void HeaderTypeDumper::dumpClassForwardDeclaration(const PDBSymbolTypeUDT &Symbo
   WithColor(Printer, PDB_ColorItem::Keyword).get() << Symbol.getUdtKind() << " ";
   WithColor(Printer, PDB_ColorItem::Type).get() << Symbol.getName();
   WithColor(Printer, PDB_ColorItem::None).get() << ";";
+  Printer << " // id: " << Symbol.getSymIndexId()  <<" len:" << Symbol.getLength();
 }

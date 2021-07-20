@@ -37,6 +37,8 @@ public:
   void start(const ClassLayout &Class);
 
 private:
+  bool shouldDumpVtbl(const PDBSymbolTypeUDT &Class);
+  void prettyPrintVtbl(const PDBSymbolTypeUDT &Class);
   void prettyPrintClassIntro(const ClassLayout &Class);
   void prettyPrintClassOutro(const ClassLayout &Class);
 

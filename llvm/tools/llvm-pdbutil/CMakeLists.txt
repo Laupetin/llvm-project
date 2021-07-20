@@ -16,6 +16,7 @@ add_llvm_tool(llvm-pdbutil
   HeaderClassDefinitionDumper.cpp
   HeaderClassLayoutGraphicalDumper.cpp
   HeaderEnumDumper.cpp
+  HeaderFunctionDumper.cpp
   HeaderTypedefDumper.cpp
   HeaderTypeDumper.cpp
   HeaderVariableDumper.cpp
