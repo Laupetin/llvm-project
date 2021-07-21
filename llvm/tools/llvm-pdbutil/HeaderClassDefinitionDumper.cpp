@@ -24,19 +24,20 @@
 using namespace llvm;
 using namespace llvm::pdb;
 
-HeaderClassDefinitionDumper::HeaderClassDefinitionDumper(LinePrinter &P, AnonTypenameTracker &A)
-    : PDBSymDumper(true), Printer(P), AnonTypenames(A) {}
+HeaderClassDefinitionDumper::HeaderClassDefinitionDumper(
+    LinePrinter &P, AnonTypenameTracker &A)
+  : PDBSymDumper(true), Printer(P), AnonTypenames(A) {
+}
 
 void HeaderClassDefinitionDumper::start(const PDBSymbolTypeUDT &Class) {
   assert(opts::pretty::ClassFormat !=
-         opts::pretty::ClassDefinitionFormat::None);
+      opts::pretty::ClassDefinitionFormat::None);
 
   ClassLayout Layout(Class);
   start(Layout);
 }
 
 void HeaderClassDefinitionDumper::start(const ClassLayout &Layout) {
-
   if (shouldDumpVtbl(Layout.getClass())) {
     prettyPrintVtbl(Layout.getClass());
   }
@@ -49,7 +50,8 @@ void HeaderClassDefinitionDumper::start(const ClassLayout &Layout) {
   prettyPrintClassOutro(Layout);
 }
 
-bool HeaderClassDefinitionDumper::shouldDumpVtbl(const PDBSymbolTypeUDT &Class) {
+bool HeaderClassDefinitionDumper::shouldDumpVtbl(
+    const PDBSymbolTypeUDT &Class) {
 
   if (opts::header::Methods)
     return false;
@@ -57,7 +59,8 @@ bool HeaderClassDefinitionDumper::shouldDumpVtbl(const PDBSymbolTypeUDT &Class) 
   if (Class.getVirtualTableShapeId() == 0)
     return false;
 
-  const auto shape = unique_dyn_cast<PDBSymbolTypeVTableShape>(Class.getVirtualTableShape());
+  const auto shape = unique_dyn_cast<PDBSymbolTypeVTableShape>(
+      Class.getVirtualTableShape());
   if (!shape)
     return false;
 
@@ -78,9 +81,17 @@ bool HeaderClassDefinitionDumper::shouldDumpVtbl(const PDBSymbolTypeUDT &Class) 
   return false;
 }
 
-void HeaderClassDefinitionDumper::prettyPrintVtbl(const PDBSymbolTypeUDT &Class) {
-    
-  Printer << "struct " << Class.getName() << "Vtbl";
+void HeaderClassDefinitionDumper::prettyPrintVtbl(
+    const PDBSymbolTypeUDT &Class) {
+
+  Printer << "struct ";
+  const auto className = Class.getName();
+  if (AnonTypenameTracker::isAnonSymbolName(className)) {
+    WithColor(Printer, PDB_ColorItem::Type).get()
+        << AnonTypenames.getAnonTypename(Class) << "Vtbl";
+  } else {
+    WithColor(Printer, PDB_ColorItem::Type).get() << className << "Vtbl";
+  }
   Printer.NewLine();
   Printer << "{";
   Printer.Indent();
@@ -120,7 +131,8 @@ void HeaderClassDefinitionDumper::prettyPrintClassIntro(
 
   const auto className = Class.getName();
   if (AnonTypenameTracker::isAnonSymbolName(className)) {
-    WithColor(Printer, PDB_ColorItem::Type).get() << AnonTypenames.getAnonTypename(Class);
+    WithColor(Printer, PDB_ColorItem::Type).get() << AnonTypenames.
+        getAnonTypename(Class);
   } else {
     WithColor(Printer, PDB_ColorItem::Type).get() << className;
   }

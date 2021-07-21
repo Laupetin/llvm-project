@@ -19,16 +19,25 @@ namespace pdb {
 class AnonTypenameTracker {
 public:
   AnonTypenameTracker();
-
-  // Do the work of marking referenced types.
+  
   const std::string &getAnonTypename(const PDBSymbol &Symbol);
-
   static bool isAnonSymbolName(const std::string &name);
 
 private:
+  static bool getLastAnonTypenameOccurrence(const std::string &name,
+                                            size_t *start, size_t *end);
+  static bool getLastAnonTypenameOccurrence(const std::string &name,
+                                            size_t *start, size_t *end,
+                                            size_t beginPos);
+  void createNestedTypesTypename(const PDBSymbol &Symbol, const std::string &ParentAnonName);
   const std::string &createAnonTypename(const PDBSymbol &Symbol);
+  const std::string &createAnonTypenameFromNestedParent(const PDBSymbol &Symbol, const PDBSymbol &Parent, const std::string &ParentAnonName);
+  std::string createAnonTypenameFromData(const PDBSymbol &Symbol) const;
+
+  static bool hasNestedTypes(const PDBSymbol &Symbol);
 
   std::unordered_map<uint32_t, std::string> PreviouslyCreatedTypenames;
+  static std::string m_not_anon_name;
 };
 
 } // namespace pdb

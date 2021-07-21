@@ -30,8 +30,10 @@ using namespace llvm;
 using namespace llvm::codeview;
 using namespace llvm::pdb;
 
-HeaderVariableDumper::HeaderVariableDumper(LinePrinter &P, AnonTypenameTracker &A)
-    : PDBSymDumper(true), Printer(P), AnonTypenames(A) {}
+HeaderVariableDumper::HeaderVariableDumper(LinePrinter &P,
+                                           AnonTypenameTracker &A)
+  : PDBSymDumper(true), Printer(P), AnonTypenames(A) {
+}
 
 void HeaderVariableDumper::start(const PDBSymbolData &Var, uint32_t Offset) {
   if (Var.isCompilerGenerated() && opts::pretty::ExcludeCompilerGenerated)
@@ -109,7 +111,13 @@ void HeaderVariableDumper::start(const PDBSymbolTypeVTable &Var,
 
   Printer.NewLine();
   if (Var.getClassParentId() != 0) {
-    Printer << Var.getClassParent()->getName() << "Vtbl* vfptr;";
+    const auto classParentName = Var.getClassParent()->getName();
+    if (AnonTypenameTracker::isAnonSymbolName(classParentName)) {
+      Printer << AnonTypenames.getAnonTypename(*Var.getClassParent()) <<
+          "Vtbl* vfptr;";
+    } else {
+      Printer << classParentName << "Vtbl* vfptr;";
+    }
   } else {
     Printer << "void* vfptr;";
   }
@@ -138,7 +146,13 @@ void HeaderVariableDumper::dump(const PDBSymbolTypeBuiltin &Symbol) {
 }
 
 void HeaderVariableDumper::dump(const PDBSymbolTypeEnum &Symbol) {
-  WithColor(Printer, PDB_ColorItem::Type).get() << Symbol.getName();
+  const auto symbolName = Symbol.getName();
+  if (AnonTypenameTracker::isAnonSymbolName(symbolName)) {
+    WithColor(Printer, PDB_ColorItem::Type).get()
+        << AnonTypenames.getAnonTypename(Symbol);
+  } else {
+    WithColor(Printer, PDB_ColorItem::Type).get() << Symbol.getName();
+  }
 }
 
 void HeaderVariableDumper::dump(const PDBSymbolTypeFunctionSig &Symbol) {
@@ -216,15 +230,26 @@ void HeaderVariableDumper::dumpRight(const PDBSymbolTypePointer &Symbol) {
 
 void HeaderVariableDumper::dump(const PDBSymbolTypeTypedef &Symbol) {
   WithColor(Printer, PDB_ColorItem::Keyword).get() << "typedef ";
-  WithColor(Printer, PDB_ColorItem::Type).get() << Symbol.getName();
+  const auto symbolName = Symbol.getName();
+  if (AnonTypenameTracker::isAnonSymbolName(symbolName)) {
+    WithColor(Printer, PDB_ColorItem::Type).get()
+        << AnonTypenames.getAnonTypename(Symbol);
+  } else {
+    WithColor(Printer, PDB_ColorItem::Type).get() << Symbol.getName();
+  }
 }
 
 void HeaderVariableDumper::dump(const PDBSymbolTypeUDT &Symbol) {
-  WithColor(Printer, PDB_ColorItem::Type).get() << Symbol.getName();
+  const auto symbolName = Symbol.getName();
+  if (AnonTypenameTracker::isAnonSymbolName(symbolName)) {
+    WithColor(Printer, PDB_ColorItem::Type).get() << AnonTypenames.getAnonTypename(Symbol);
+  } else {
+    WithColor(Printer, PDB_ColorItem::Type).get() << Symbol.getName();
+  }
 }
 
 void HeaderVariableDumper::dumpSymbolTypeAndName(const PDBSymbol &Type,
-                                           StringRef Name) {
+                                                 StringRef Name) {
   Type.dump(*this);
   WithColor(Printer, PDB_ColorItem::Identifier).get() << " " << Name;
   Type.dumpRight(*this);

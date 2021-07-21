@@ -34,8 +34,7 @@ void HeaderTypedefDumper::start(const PDBSymbolTypeTypedef &Symbol) {
   uint32_t TargetId = Symbol.getTypeId();
   if (auto TypeSymbol = Symbol.getSession().getSymbolById(TargetId)) {
     TypeSymbol->dump(*this);
-    WithColor(Printer, PDB_ColorItem::Identifier).get()
-        << Symbol.getName();
+    WithColor(Printer, PDB_ColorItem::Identifier).get() << " " << Symbol.getName();
     TypeSymbol->dumpRight(*this);
   }
   Printer << ";";

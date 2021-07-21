@@ -34,7 +34,8 @@ using namespace llvm::pdb;
 using LayoutPtr = std::unique_ptr<ClassLayout>;
 
 HeaderTypeDumper::HeaderTypeDumper(LinePrinter &P)
-    : PDBSymDumper(true), Printer(P) {}
+  : PDBSymDumper(true), Printer(P) {
+}
 
 template <typename T>
 static bool isTypeExcluded(LinePrinter &Printer, const T &Symbol) {
@@ -130,9 +131,22 @@ void HeaderTypeDumper::dumpClassLayout(const ClassLayout &Class) {
   Printer.NewLine();
 }
 
-void HeaderTypeDumper::dumpClassForwardDeclaration(const PDBSymbolTypeUDT &Symbol) {
-  WithColor(Printer, PDB_ColorItem::Keyword).get() << Symbol.getUdtKind() << " ";
-  WithColor(Printer, PDB_ColorItem::Type).get() << Symbol.getName();
+void HeaderTypeDumper::dumpClassForwardDeclaration(
+    const PDBSymbolTypeUDT &Symbol) {
+  WithColor(Printer, PDB_ColorItem::Keyword).get() << Symbol.getUdtKind() <<
+      " ";
+
+  const auto symbolName = Symbol.getName();
+  if (AnonTypenameTracker::isAnonSymbolName(symbolName)) {
+    WithColor(Printer, PDB_ColorItem::Type).get() << AnonTypenames.
+        getAnonTypename(Symbol);
+  } else {
+    WithColor(Printer, PDB_ColorItem::Type).get() << symbolName;
+  }
   WithColor(Printer, PDB_ColorItem::None).get() << ";";
-  Printer << " // id: " << Symbol.getSymIndexId()  <<" len:" << Symbol.getLength();
+
+  if (opts::header::ExtraInfo) {
+    Printer << " // id: " << Symbol.getSymIndexId()
+        << " len:" << Symbol.getLength();
+  }
 }
